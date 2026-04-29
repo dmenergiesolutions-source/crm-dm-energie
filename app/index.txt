@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DM Energie Solutions — Gestion des devis</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bleu: #1B3A6B;
+      --bleu-ciel: #4BA3C7;
+      --vert: #3B6D11;
+      --gris-bg: #F4F6F9;
+      --gris-card: #FFFFFF;
+      --gris-border: #E2E8F0;
+      --gris-text: #64748B;
+      --gris-light: #F8FAFC;
+      --orange: #854F0B;
+      --rouge: #E24B4A;
+      --font: 'Sora', sans-serif;
+      --mono: 'JetBrains Mono', monospace;
+      --radius: 10px;
+      --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.04);
+      --shadow-lg: 0 8px 30px rgba(0,0,0,0.12);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: var(--font); background: var(--gris-bg); color: #1E293B; min-height: 100vh; }
+
+    /* NAV */
+    nav {
+      background: var(--bleu);
+      padding: 0 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 56px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    .nav-brand { color: white; font-size: 15px; font-weight: 600; letter-spacing: -0.02em; }
+    .nav-brand span { color: var(--bleu-ciel); }
+    .nav-tabs { display: flex; gap: 4px; }
+    .nav-tab {
+      padding: 6px 16px;
+      border-radius: 6px;
+      border: none;
+      background: transparent;
+      color: rgba(255,255,255,0.6);
+      font-family: var(--font);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .nav-tab:hover { background: rgba(255,255,255,0.1); color: white; }
+    .nav-tab.active { background: rgba(255,255,255,0.15); color: white; }
+    .nav-save { font-size: 12px; color: rgba(255,255,255,0.5); display: flex; align-items: center; gap: 6px; }
+    .save-dot { width: 7px; height: 7px; border-radius: 50%; background: #4ade80; }
+    .save-dot.saving { background: #fbbf24; animation: pulse 1s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+    /* LAYOUT */
+    .main { padding: 1.5rem 2rem; max-width: 1400px; margin: 0 auto; }
+    .section { display: none; }
+    .section.active { display: block; }
+
+    /* CARDS */
+    .card {
+      background: var(--gris-card);
+      border: 1px solid var(--gris-border);
+      border-radius: var(--radius);
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 1rem;
+      box-shadow: var(--shadow);
+    }
+    .card-title { font-size: 14px; font-weight: 600; color: var(--bleu); margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+    /* GRIDS */
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+    .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+
+    /* FORM */
+    .fg { display: flex; flex-direction: column; gap: 5px; }
+    .fg label { font-size: 11px; font-weight: 600; color: var(--gris-text); text-transform: uppercase; letter-spacing: 0.06em; }
+    input, select, textarea {
+      border: 1px solid var(--gris-border);
+      border-radius: 7px;
+      padding: 8px 12px;
+      font-family: var(--font);
+      font-size: 13px;
+      color: #1E293B;
+      background: var(--gris-light);
+      transition: border-color 0.15s, box-shadow 0.15s;
+      outline: none;
+      width: 100%;
+    }
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--bleu-ciel);
+      box-shadow: 0 0 0 3px rgba(75,163,199,0.12);
+      background: white;
+    }
+    textarea { min-height: 80px; resize: vertical; }
+
+    /* BOUTONS */
+    .btn { padding: 9px 20px; border-radius: 7px; border: none; font-family: var(--font); font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.15s; }
+    .btn-primary { background: var(--bleu); color: white; }
+    .btn-primary:hover { background: #243d75; }
+    .btn-ciel { background: var(--bleu-ciel); color: white; }
+    .btn-ciel:hover { background: #3a8fb3; }
+    .btn-vert { background: var(--vert); color: white; }
+    .btn-vert:hover { background: #4a8a16; }
+    .btn-outline { background: transparent; border: 1px solid var(--gris-border); color: #1E293B; }
+    .btn-outline:hover { border-color: var(--bleu-ciel); color: var(--bleu); }
+    .btn-danger { background: transparent; border: 1px solid var(--rouge); color: var(--rouge); }
+    .btn-danger:hover { background: #FEF2F2; }
+    .btn-block { width: 100%; margin-top: 1rem; padding: 12px; font-size: 14px; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* PRESTATIONS */
+    .presta-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 1rem; }
+    .presta-card {
+      border: 1.5px solid var(--gris-border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      cursor: pointer;
+      transition: all 0.15s;
+      background: var(--gris-light);
+    }
+    .presta-card:hover { border-color: var(--bleu-ciel); }
+    .presta-card.active { border-color: var(--bleu); background: #EBF5FA; }
+    .presta-card .pname { font-size: 13px; font-weight: 600; color: #1E293B; }
+    .presta-card.active .pname { color: var(--bleu); }
+    .presta-card .psub { font-size: 11px; color: var(--gris-text); margin-top: 2px; }
+    .presta-detail { background: var(--gris-bg); border-radius: 8px; padding: 10px 12px; margin-top: 6px; }
+    .presta-detail label { font-size: 11px; font-weight: 600; color: var(--gris-text); text-transform: uppercase; letter-spacing: 0.06em; display: block; margin-bottom: 4px; }
+    .presta-detail input[type=number] { width: 120px; }
+    .split-line { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+    .btn-add-split { background: none; border: none; color: var(--bleu-ciel); font-size: 12px; font-weight: 600; cursor: pointer; padding: 4px 0; }
+
+    /* MARGE */
+    .marge-ctrl { display: flex; align-items: center; gap: 10px; }
+    .marge-btn {
+      width: 34px; height: 34px;
+      border: 1.5px solid var(--gris-border);
+      border-radius: 7px;
+      background: white;
+      cursor: pointer;
+      font-size: 18px;
+      font-weight: 400;
+      color: var(--bleu);
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s;
+    }
+    .marge-btn:hover { border-color: var(--bleu-ciel); background: var(--gris-light); }
+    .marge-val {
+      font-family: var(--mono);
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--bleu);
+      min-width: 110px;
+      text-align: center;
+      border: 1.5px solid var(--gris-border);
+      border-radius: 7px;
+      padding: 7px 10px;
+      background: white;
+    }
+
+    /* RÉSULTATS */
+    .results-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 12px; }
+    .result-item {
+      background: var(--gris-light);
+      border: 1px solid var(--gris-border);
+      border-radius: 8px;
+      padding: 12px 14px;
+    }
+    .result-item .rl { font-size: 11px; color: var(--gris-text); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+    .result-item .rv { font-size: 18px; font-weight: 700; color: #1E293B; font-family: var(--mono); }
+    .result-item.p1 .rv { color: var(--bleu); }
+    .result-item.aide .rv { color: var(--vert); }
+    .result-item.rac .rv { color: var(--orange); }
+    .result-item.benef .rv { color: var(--vert); }
+    .badge-mpr { display: inline-block; padding: 3px 12px; border-radius: 99px; font-size: 12px; font-weight: 600; margin-bottom: 12px; }
+    .b-bleu { background: #DBEAFE; color: #1E40AF; }
+    .b-jaune { background: #FEF3C7; color: #92400E; }
+    .b-violet { background: #EDE9FE; color: #5B21B6; }
+    .b-rose { background: #FCE7F3; color: #9D174D; }
+    .b-nc { background: var(--gris-bg); color: var(--gris-text); }
+    .divider { border: none; border-top: 1px solid var(--gris-border); margin: 12px 0; }
+
+    /* KANBAN */
+    .kanban-board { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; }
+    .k-col { }
+    .k-header {
+      font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+      padding: 6px 10px; border-radius: 7px; text-align: center; margin-bottom: 8px;
+    }
+    .k-header.cree { background: #DBEAFE; color: #1E40AF; }
+    .k-header.devis { background: #FEF3C7; color: #92400E; }
+    .k-header.anah { background: #EDE9FE; color: #5B21B6; }
+    .k-header.acompte { background: #FFF7ED; color: #7C2D12; }
+    .k-header.chantier { background: #DCFCE7; color: #14532D; }
+    .k-header.facture { background: #FCE7F3; color: #9D174D; }
+    .k-drop {
+      min-height: 140px;
+      border-radius: 8px;
+      padding: 4px;
+      border: 2px dashed transparent;
+      transition: all 0.15s;
+    }
+    .k-drop.drag-over { border-color: var(--bleu-ciel); background: #EBF5FA; }
+    .k-empty { text-align: center; padding: 20px 8px; font-size: 11px; color: #CBD5E1; }
+    .dossier-card {
+      background: white;
+      border: 1px solid var(--gris-border);
+      border-radius: 8px;
+      padding: 10px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      transition: all 0.15s;
+      user-select: none;
+    }
+    .dossier-card:hover { border-color: var(--bleu-ciel); box-shadow: 0 2px 8px rgba(75,163,199,0.15); transform: translateY(-1px); }
+    .dossier-card.dragging { opacity: 0.35; transform: rotate(2deg); }
+    .dc-nom { font-size: 12px; font-weight: 700; color: #1E293B; margin-bottom: 2px; }
+    .dc-num { font-size: 10px; color: #94A3B8; margin-bottom: 8px; font-family: var(--mono); }
+    .dc-prix { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-bottom: 6px; }
+    .dc-pi { background: var(--gris-bg); border-radius: 5px; padding: 5px 4px; text-align: center; }
+    .dc-pi-lbl { font-size: 9px; color: #94A3B8; font-weight: 600; text-transform: uppercase; margin-bottom: 2px; }
+    .dc-pi-val { font-size: 11px; font-weight: 700; font-family: var(--mono); }
+    .dc-pi-val.p1 { color: var(--bleu); }
+    .dc-pi-val.p3 { color: var(--vert); }
+    .dc-benef { font-size: 10px; font-weight: 700; text-align: center; background: #DCFCE7; border-radius: 5px; padding: 4px 6px; color: #14532D; font-family: var(--mono); }
+
+    /* MODAL */
+    .modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(15, 23, 42, 0.5);
+      backdrop-filter: blur(4px);
+      z-index: 1000;
+      display: flex; align-items: center; justify-content: center; padding: 1rem;
+    }
+    .modal {
+      background: white;
+      border-radius: 14px;
+      padding: 1.75rem;
+      max-width: 540px;
+      width: 100%;
+      max-height: 88vh;
+      overflow-y: auto;
+      position: relative;
+      box-shadow: var(--shadow-lg);
+    }
+    .modal-close { position: absolute; top: 14px; right: 16px; background: none; border: none; font-size: 22px; cursor: pointer; color: #94A3B8; line-height: 1; }
+    .modal-close:hover { color: #1E293B; }
+    .modal-title { font-size: 18px; font-weight: 700; color: var(--bleu); margin-bottom: 1.25rem; }
+    .modal-section { font-size: 11px; font-weight: 700; color: var(--bleu-ciel); text-transform: uppercase; letter-spacing: 0.08em; margin: 14px 0 8px; }
+    .info-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--gris-border); font-size: 13px; }
+    .info-row:last-child { border-bottom: none; }
+    .info-row .il { color: var(--gris-text); }
+    .info-row .iv { font-weight: 600; color: #1E293B; text-align: right; max-width: 55%; }
+    .modal-btns { display: flex; gap: 8px; margin-top: 1rem; flex-wrap: wrap; }
+    .modal-btn { flex: 1; padding: 9px 16px; border: none; border-radius: 7px; font-family: var(--font); font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.15s; }
+    .modal-btn.devis { background: var(--bleu); color: white; }
+    .modal-btn.devis:hover { background: #243d75; }
+    .modal-btn.facture { background: var(--vert); color: white; }
+    .modal-btn.facture:hover { background: #4a8a16; }
+    .modal-btn:disabled { background: #CBD5E1; cursor: not-allowed; }
+
+    /* BARÈMES */
+    .bar-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .bar-table th, .bar-table td { padding: 8px 12px; border-bottom: 1px solid var(--gris-border); text-align: center; }
+    .bar-table th:first-child, .bar-table td:first-child { text-align: left; color: var(--gris-text); }
+    .bar-table th { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
+
+    /* SPINNER */
+    .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 6px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* RESPONSIVE */
+    @media (max-width: 900px) {
+      .presta-grid { grid-template-columns: repeat(2, 1fr); }
+      .kanban-board { grid-template-columns: repeat(3, 1fr); }
+    }
+    @media (max-width: 600px) {
+      .main { padding: 1rem; }
+      .grid2, .grid3 { grid-template-columns: 1fr; }
+      .results-grid { grid-template-columns: 1fr 1fr; }
+      .kanban-board { grid-template-columns: repeat(2, 1fr); }
+      nav { padding: 0 1rem; }
+      .nav-tabs { gap: 2px; }
+      .nav-tab { padding: 5px 10px; font-size: 12px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAVIGATION -->
+<nav>
+  <div class="nav-brand">DM <span>Energie</span> Solutions</div>
+  <div class="nav-tabs">
+    <button class="nav-tab" onclick="showTab('sim')">① Simulateur</button>
+    <button class="nav-tab" onclick="showTab('devis')">② Devis</button>
+    <button class="nav-tab active" onclick="showTab('kanban')">📋 Dossiers</button>
+    <button class="nav-tab" onclick="showTab('bar')">Barèmes</button>
+  </div>
+  <div class="nav-save">
+    <span class="save-dot" id="save_dot"></span>
+    <span id="save_label">Chargement...</span>
+  </div>
+</nav>
+
+<div class="main">
+
+<!-- ═══ SIMULATEUR ═══ -->
+<div id="sim" class="section">
+  <div class="card">
+    <div class="card-title">Profil client</div>
+    <div class="grid3">
+      <div class="fg"><label>Revenu fiscal de référence (€/an)</label><input type="number" id="rfr" placeholder="ex : 28 000" oninput="calc()"></div>
+      <div class="fg"><label>Personnes dans le foyer</label>
+        <select id="nbp" onchange="calc()"><option value="1">1 personne</option><option value="2" selected>2 personnes</option><option value="3">3 personnes</option><option value="4">4 personnes</option><option value="5">5 personnes et +</option></select>
+      </div>
+      <div class="fg"><label>Zone géographique</label>
+        <select id="zone" onchange="calc()"><option value="idf">Île-de-France</option><option value="hors" selected>Hors Île-de-France</option></select>
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="fg"><label>Sauts de classe DPE</label>
+        <select id="sauts" onchange="calc()"><option value="2">2 sauts de classe</option><option value="3">3 sauts ou plus</option></select>
+      </div>
+      <div class="fg"><label>Profil MaPrimeRénov' détecté</label>
+        <div id="badge_mpr" style="margin-top:6px"><span class="badge-mpr b-nc">— saisissez le RFR</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Prestations</div>
+    <div class="presta-grid">
+      <div><div class="presta-card" id="pc_ite" onclick="toggle('ite')"><div class="pname">ITE</div><div class="psub">P1:203€/m² · P2:100€/m²</div></div><div class="presta-detail" id="pd_ite" style="display:none"><label>Surface (m²)</label><input type="number" id="ite_m2" value="100" min="0" oninput="calc()"></div></div>
+      <div><div class="presta-card" id="pc_combles" onclick="toggle('combles')"><div class="pname">Combles perdus</div><div class="psub">P1:102€/m² · P2:40€/m²</div></div><div class="presta-detail" id="pd_combles" style="display:none"><label>Surface (m²)</label><input type="number" id="combles_m2" value="80" min="0" oninput="calc()"></div></div>
+      <div><div class="presta-card" id="pc_rampants" onclick="toggle('rampants')"><div class="pname">Rampants</div><div class="psub">P1:102€/m² · P2:40€/m²</div></div><div class="presta-detail" id="pd_rampants" style="display:none"><label>Surface (m²)</label><input type="number" id="rampants_m2" value="60" min="0" oninput="calc()"></div></div>
+      <div><div class="presta-card" id="pc_plancher" onclick="toggle('plancher')"><div class="pname">Plancher bas</div><div class="psub">P1:102€/m² · P2:30€/m²</div></div><div class="presta-detail" id="pd_plancher" style="display:none"><label>Surface (m²)</label><input type="number" id="plancher_m2" value="80" min="0" oninput="calc()"></div></div>
+      <div><div class="presta-card" id="pc_ballon" onclick="toggle('ballon')"><div class="pname">Ballon thermo.</div><div class="psub">P1:3 700€ · P2:2 000€</div></div><div class="presta-detail" id="pd_ballon" style="display:none"><label>Nombre d'unités</label><input type="number" id="ballon_nb" value="1" min="1" max="5" oninput="calc()"></div></div>
+      <div><div class="presta-card" id="pc_vmc" onclick="toggle('vmc')"><div class="pname">VMC simple flux</div><div class="psub">P1:3 500€ · P2:1 000€</div></div><div class="presta-detail" id="pd_vmc" style="display:none"><label>Nombre d'unités</label><input type="number" id="vmc_nb" value="1" min="1" max="5" oninput="calc()"></div></div>
+      <div><div class="presta-card" id="pc_pacae" onclick="toggle('pacae')"><div class="pname">PAC air/eau</div><div class="psub">P1:21 500€ · P2:7 500€</div></div><div class="presta-detail" id="pd_pacae" style="display:none"><label>Nombre d'unités</label><input type="number" id="pacae_nb" value="1" min="1" max="3" oninput="calc()"></div></div>
+      <div><div class="presta-card" id="pc_pacaa" onclick="toggle('pacaa')"><div class="pname">PAC air/air</div><div class="psub">Bloc + splits</div></div><div class="presta-detail" id="pd_pacaa" style="display:none">
+        <label>Bloc moteur</label>
+        <select id="bloc_sel" onchange="calc()" style="margin-bottom:8px"><option value="3MXM52A9">3MXM52A9 — 8 500€</option><option value="3MXM68A9">3MXM68A9 — 9 500€</option><option value="5MXM90N9">5MXM90N9 — 13 000€</option></select>
+        <label>Splits</label>
+        <div id="splits_container"></div>
+        <button class="btn-add-split" onclick="addSplit()">+ Ajouter un split</button>
+      </div></div>
+    </div>
+
+    <div class="fg" style="max-width:280px">
+      <label>Marge souhaitée (€)</label>
+      <div class="marge-ctrl">
+        <button class="marge-btn" onclick="changeMarge(-500)">−</button>
+        <div class="marge-val" id="marge_display">12 000 €</div>
+        <button class="marge-btn" onclick="changeMarge(+500)">+</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="result_box" style="display:none">
+    <div class="card">
+      <div class="card-title">Résultats</div>
+      <div id="badge_mpr_res" style="margin-bottom:12px"></div>
+      <div class="results-grid">
+        <div class="result-item p1"><div class="rl">Prix n°1 — Devis ANAH</div><div class="rv" id="r1">—</div></div>
+        <div class="result-item"><div class="rl">Prix n°2 — Coût réel</div><div class="rv" id="r2">—</div></div>
+        <div class="result-item"><div class="rl">Prix n°3 — Prix de vente</div><div class="rv" id="r3">—</div></div>
+      </div>
+      <div class="divider"></div>
+      <div class="results-grid">
+        <div class="result-item aide"><div class="rl">Aide MPR estimée</div><div class="rv" id="r_aide">—</div></div>
+        <div class="result-item rac"><div class="rl">Reste à charge client</div><div class="rv" id="r_rac">—</div></div>
+        <div class="result-item benef"><div class="rl">Votre bénéfice net</div><div class="rv" id="r_benef">—</div></div>
+      </div>
+      <button class="btn btn-primary btn-block" onclick="goToDevis()">Éditer le devis →</button>
+    </div>
+  </div>
+  <div id="info_nc" style="text-align:center;padding:2rem;color:#94A3B8;font-size:13px">Sélectionnez au moins une prestation pour voir les résultats.</div>
+</div>
+
+<!-- ═══ FORMULAIRE DEVIS ═══ -->
+<div id="devis" class="section">
+  <div class="card" id="devis_recap" style="display:none"></div>
+
+  <div class="card">
+    <div class="card-title">Informations client</div>
+    <div class="grid2">
+      <div class="fg"><label>Civilité</label><select id="d_civ"><option>M.</option><option>Mme</option><option>M. et Mme</option><option>SCI</option></select></div>
+      <div class="fg"><label>Nom et prénom</label><input type="text" id="d_nom" placeholder="ex : DUPONT Jean"></div>
+    </div>
+    <div class="grid2">
+      <div class="fg"><label>Adresse</label><input type="text" id="d_adresse" placeholder="ex : 12 rue de la Paix"></div>
+      <div class="fg"><label>Code postal + Ville</label><input type="text" id="d_ville" placeholder="ex : 91260 JUVISY SUR ORGE"></div>
+    </div>
+    <div class="grid3">
+      <div class="fg"><label>Téléphone</label><input type="text" id="d_tel" placeholder="06-XX-XX-XX-XX"></div>
+      <div class="fg"><label>Email</label><input type="text" id="d_email" placeholder="dupont@email.com"></div>
+      <div class="fg"><label>Adresse des travaux</label><input type="text" id="d_adrtravaux" placeholder="Idem adresse client"></div>
+    </div>
+    <div class="grid3">
+      <div class="fg"><label>Zone</label><select id="d_zone"><option>H1</option><option>H2</option><option>H3</option></select></div>
+      <div class="fg"><label>Type de chauffage</label><input type="text" id="d_chauffage" placeholder="Electrique / Gaz"></div>
+      <div class="fg"><label>Surface habitable (m²)</label><input type="number" id="d_shab" placeholder="97"></div>
+    </div>
+    <div class="fg"><label>Type de logement</label><input type="text" id="d_logement" placeholder="Maison individuelle / +15 ans / 97 m²"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Audit énergétique</div>
+    <div class="grid3">
+      <div class="fg"><label>Date de l'audit</label><input type="text" id="d_audit_date" placeholder="08/04/2025"></div>
+      <div class="fg"><label>Référence dossier</label><input type="text" id="d_audit_ref" placeholder="A25910157622W"></div>
+      <div class="fg"><label>Logiciel utilisé</label><input type="text" id="d_audit_logiciel" value="BATI AUDIT, version 1.1.55.0"></div>
+    </div>
+    <div class="grid2">
+      <div class="fg"><label>CEP initial (kWh/m².an)</label><input type="number" id="d_cep_ini" placeholder="379"></div>
+      <div class="fg"><label>CEP projet (kWh/m².an)</label><input type="number" id="d_cep_proj" placeholder="109"></div>
+    </div>
+    <div class="grid2">
+      <div class="fg"><label>Classe DPE avant travaux</label><select id="d_dpe_avant"><option>G</option><option>F</option><option>E</option><option>D</option><option>C</option></select></div>
+      <div class="fg"><label>Classe DPE après travaux</label><select id="d_dpe_apres"><option>B</option><option>C</option><option>D</option></select></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Notes / remarques</div>
+    <div class="fg"><textarea id="d_notes" placeholder="Ex : client souhaite une avance de 30% de la subvention..."></textarea></div>
+  </div>
+
+  <button class="btn btn-primary btn-block" id="btn_gen" onclick="generatePDF()">📄 Générer le PDF du devis</button>
+</div>
+
+<!-- ═══ KANBAN ═══ -->
+<div id="kanban" class="section active">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem">
+    <h2 style="font-size:18px;font-weight:700;color:var(--bleu)">Suivi des dossiers</h2>
+    <div class="nav-save" style="color:var(--gris-text)">
+      <span class="save-dot" id="save_dot2"></span>
+      <span id="save_label2">Chargement...</span>
+    </div>
+  </div>
+  <div class="kanban-board" id="kanban_board"></div>
+</div>
+
+<!-- ═══ BARÈMES ═══ -->
+<div id="bar" class="section">
+  <div class="card">
+    <div class="card-title">Plafonds de ressources MPR 2026 — Hors Île-de-France</div>
+    <table class="bar-table">
+      <thead><tr>
+        <th>Personnes</th>
+        <th style="color:#1E40AF;background:#DBEAFE">Bleu (très modeste)</th>
+        <th style="color:#92400E;background:#FEF3C7">Jaune (modeste)</th>
+        <th style="color:#5B21B6;background:#EDE9FE">Violet (intermédiaire)</th>
+        <th style="color:#9D174D;background:#FCE7F3">Rose (supérieur)</th>
+      </tr></thead>
+      <tbody id="bar_tbody"></tbody>
+    </table>
+  </div>
+  <div class="card" style="margin-top:1rem">
+    <div class="card-title">Aides MPR Accompagné 2026</div>
+    <table class="bar-table">
+      <thead><tr><th>Profil</th><th>2 sauts — max</th><th>3 sauts+ — max</th></tr></thead>
+      <tbody>
+        <tr><td><span class="badge-mpr b-bleu">Bleu</span></td><td>80% + 2 000€ = <strong>26 000€</strong></td><td>80% + 2 000€ = <strong>34 000€</strong></td></tr>
+        <tr><td><span class="badge-mpr b-jaune">Jaune</span></td><td>60% + 1 600€ = <strong>19 600€</strong></td><td>60% + 1 600€ = <strong>25 600€</strong></td></tr>
+        <tr><td><span class="badge-mpr b-violet">Violet</span></td><td>45% + 800€ = <strong>14 300€</strong></td><td>45% + 800€ = <strong>18 800€</strong></td></tr>
+        <tr><td><span class="badge-mpr b-rose">Rose</span></td><td>10% + 400€ = <strong>3 400€</strong></td><td>10% + 400€ = <strong>4 400€</strong></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+</div><!-- /main -->
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal" style="display:none" onclick="closeModal(event)">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModalDirect()">✕</button>
+    <div id="modal_body"></div>
+  </div>
+</div>
+
+<script>
+// ── CONFIG ────────────────────────────────────────────────────────────────
+// ⚠️ Remplacer par l'URL de votre backend déployé sur Railway/Render
+const API_URL = 'https://dm-energie-app.onrender.com';
+
+const HORS=[[17363,22259,31185],[25393,32553,45842],[30540,39148,55196],[35676,45735,64550],[40835,52348,73907]];
+const IDF=[[24031,29253,40851],[35270,42933,60051],[42357,51564,71846],[49455,60208,84562],[56580,68877,96817]];
+const NOMS=['1 pers.','2 pers.','3 pers.','4 pers.','5+ pers.'];
+const BLOCS={'3MXM52A9':{p1:8500,p2:1810.80},'3MXM68A9':{p1:9500,p2:2160},'5MXM90N9':{p1:13000,p2:3017.23}};
+const SPLITS={'CTXM15R':{p1:980,p2:317.95},'FTXM20N':{p1:2280,p2:328.44}};
+const TAUX={bleu:{t:0.80,bonus:2000,max2:26000,max3:34000},jaune:{t:0.60,bonus:1600,max2:19600,max3:25600},violet:{t:0.45,bonus:800,max2:14300,max3:18800},rose:{t:0.10,bonus:400,max2:3400,max3:4400}};
+const LABELS={bleu:'<span class="badge-mpr b-bleu">Bleu — Très modeste</span>',jaune:'<span class="badge-mpr b-jaune">Jaune — Modeste</span>',violet:'<span class="badge-mpr b-violet">Violet — Intermédiaire</span>',rose:'<span class="badge-mpr b-rose">Rose — Supérieur</span>'};
+const COLS=[{id:'cree',label:'Dossier créé',cls:'cree'},{id:'devis_env',label:'Devis envoyé',cls:'devis'},{id:'anah',label:'Envoyé ANAH',cls:'anah'},{id:'acompte',label:'Demande acompte',cls:'acompte'},{id:'chantier',label:'Chantier',cls:'chantier'},{id:'facture',label:'Facture',cls:'facture'}];
+const PRESTA_LABELS={ite:'ITE',combles:'Combles',rampants:'Rampants',plancher:'Plancher',ballon:'Ballon',vmc:'VMC',pacae:'PAC air/eau',pacaa:'PAC air/air'};
+const STORAGE_KEY='dm_dossiers_v1';
+
+let actifs=new Set(),splitLines=[],splitId=0,margeVal=12000;
+let lastResults={p1:0,p2:0,p3:0,aide:0,rac:0,benef:0,couleur:null,sauts:'2'};
+let devisCounter=1010;
+let dragId=null,dossiers=[],saveTimeout=null;
+
+// ── SAUVEGARDE ────────────────────────────────────────────────────────────
+function setSaveStatus(s){
+  ['save_dot','save_dot2'].forEach(id=>{const el=document.getElementById(id);if(el)el.className='save-dot'+(s==='saving'?' saving':'');});
+  const txt=s==='saving'?'Sauvegarde...':`Sauvegardé — ${dossiers.length} dossier${dossiers.length>1?'s':''}`;
+  ['save_label','save_label2'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=txt;});
+}
+async function saveDossiers(){
+  setSaveStatus('saving');
+  try{localStorage.setItem(STORAGE_KEY,JSON.stringify(dossiers));setSaveStatus('saved');}
+  catch(e){console.error(e);setSaveStatus('saved');}
+}
+function loadDossiers(){
+  try{
+    const raw=localStorage.getItem(STORAGE_KEY);
+    if(raw){
+      dossiers=JSON.parse(raw);
+      const nums=dossiers.map(d=>parseInt((d.numero||'').split('-')[1])).filter(n=>!isNaN(n));
+      if(nums.length>0)devisCounter=Math.max(...nums)+1;
+      setSaveStatus('saved');
+    }else{dossiers=[];setSaveStatus('saved');}
+  }catch(e){dossiers=[];setSaveStatus('saved');}
+  renderKanban();
+}
+function scheduleSave(){clearTimeout(saveTimeout);saveTimeout=setTimeout(saveDossiers,800);}
+
+// ── KANBAN ────────────────────────────────────────────────────────────────
+function fmt(n){return Math.round(n).toLocaleString('fr-FR')+' €';}
+function fmtK(n){return n>=1000?(Math.round(n/100)/10)+'k €':Math.round(n)+' €';}
+
+function renderKanban(){
+  const board=document.getElementById('kanban_board');
+  board.innerHTML='';
+  COLS.forEach(col=>{
+    const colD=dossiers.filter(d=>d.col===col.id);
+    const div=document.createElement('div');div.className='k-col';
+    div.innerHTML=`<div class="k-header ${col.cls}">${col.label} <span style="opacity:0.6">${colD.length}</span></div>
+      <div class="k-drop" id="drop_${col.id}" ondragover="dragOver(event,'${col.id}')" ondragleave="dragLeave('${col.id}')" ondrop="drop(event,'${col.id}')">
+        ${colD.length===0?'<div class="k-empty">Aucun dossier</div>':''}
+      </div>`;
+    board.appendChild(div);
+    const dz=div.querySelector('.k-drop');
+    colD.forEach(d=>{
+      const card=document.createElement('div');
+      card.className='dossier-card';card.id='card_'+d.id;card.draggable=true;
+      card.innerHTML=`<div class="dc-nom">${d.nom}</div><div class="dc-num">N° ${d.numero} — ${d.date}</div>
+        <div class="dc-prix">
+          <div class="dc-pi"><div class="dc-pi-lbl">P1 ANAH</div><div class="dc-pi-val p1">${fmtK(d.p1)}</div></div>
+          <div class="dc-pi"><div class="dc-pi-lbl">P3 Vente</div><div class="dc-pi-val p3">${fmtK(d.p3)}</div></div>
+        </div>
+        <div class="dc-benef">Bénéfice : ${fmtK(d.benef)}</div>`;
+      card.addEventListener('dragstart',e=>{dragId=d.id;setTimeout(()=>card.classList.add('dragging'),0);});
+      card.addEventListener('dragend',()=>{card.classList.remove('dragging');dragId=null;});
+      card.addEventListener('click',()=>openModal(d.id));
+      dz.appendChild(card);
+    });
+  });
+}
+
+function dragOver(e,id){e.preventDefault();document.getElementById('drop_'+id)?.classList.add('drag-over');}
+function dragLeave(id){document.getElementById('drop_'+id)?.classList.remove('drag-over');}
+function drop(e,id){
+  e.preventDefault();dragLeave(id);
+  if(dragId){const d=dossiers.find(x=>x.id===dragId);if(d){d.col=id;renderKanban();scheduleSave();}}
+}
+
+function openModal(id){
+  const d=dossiers.find(x=>x.id===id);if(!d)return;
+  const isFact=d.col==='facture';
+  const LCOUL={bleu:'Bleu — Très modeste',jaune:'Jaune — Modeste',violet:'Violet — Intermédiaire',rose:'Rose — Supérieur'};
+  document.getElementById('modal_body').innerHTML=`
+    <div class="modal-title">${d.nom}</div>
+    <div class="modal-section">Client</div>
+    <div class="info-row"><span class="il">Adresse</span><span class="iv">${d.adresse||'—'}</span></div>
+    <div class="info-row"><span class="il">Téléphone</span><span class="iv">${d.tel||'—'}</span></div>
+    <div class="info-row"><span class="il">Email</span><span class="iv">${d.email||'—'}</span></div>
+    <div class="info-row"><span class="il">Devis n°</span><span class="iv">${d.numero} — ${d.date}</span></div>
+    <div class="info-row"><span class="il">Prestations</span><span class="iv">${(d.sim?.actifs||[]).map(a=>PRESTA_LABELS[a]||a).join(', ')}</span></div>
+    <div class="modal-section">Les 3 prix</div>
+    <div class="info-row"><span class="il">Prix n°1 — Devis ANAH</span><span class="iv" style="color:var(--bleu);font-size:16px">${fmt(d.p1)}</span></div>
+    <div class="info-row"><span class="il">Prix n°2 — Coût réel</span><span class="iv">${fmt(d.p2)}</span></div>
+    <div class="info-row"><span class="il">Prix n°3 — Prix de vente</span><span class="iv" style="color:var(--vert)">${fmt(d.p3)}</span></div>
+    <div class="modal-section">Aide & Finances</div>
+    ${d.couleur?`<div class="info-row"><span class="il">Profil MPR</span><span class="iv">${LCOUL[d.couleur]}</span></div>`:''}
+    <div class="info-row"><span class="il">Aide MPR estimée</span><span class="iv" style="color:var(--vert)">${fmt(d.aide)}</span></div>
+    <div class="info-row"><span class="il">Reste à charge client</span><span class="iv" style="color:var(--orange)">${fmt(d.rac)}</span></div>
+    <div class="info-row"><span class="il">Bénéfice net</span><span class="iv" style="color:var(--vert);font-size:16px;font-weight:700">${fmt(d.benef)}</span></div>
+    <div class="modal-section">Déplacer le dossier</div>
+    <div style="display:flex;gap:8px">
+      <select id="move_col" style="flex:1">${COLS.map(c=>`<option value="${c.id}" ${c.id===d.col?'selected':''}>${c.label}</option>`).join('')}</select>
+      <button class="btn btn-outline" onclick="moveCard('${d.id}')">Déplacer →</button>
+    </div>
+    <div class="modal-btns">
+      <button class="modal-btn devis" onclick="generateFromModal('${d.id}','devis')">📄 Générer le devis</button>
+      <button class="modal-btn facture" ${!isFact?'disabled title="Disponible en colonne Facture"':''} onclick="${isFact?`generateFromModal('${d.id}','facture')`:''}">🧾 Générer la facture</button>
+    </div>
+    <button class="btn btn-danger" style="width:100%;margin-top:8px" onclick="supprimerDossier('${d.id}')">🗑 Supprimer ce dossier</button>
+  `;
+  document.getElementById('modal').style.display='flex';
+}
+
+function moveCard(id){const d=dossiers.find(x=>x.id===id);const col=document.getElementById('move_col').value;if(d){d.col=col;closeModalDirect();renderKanban();scheduleSave();}}
+function supprimerDossier(id){if(!confirm('Supprimer ce dossier définitivement ?'))return;dossiers=dossiers.filter(x=>x.id!==id);closeModalDirect();renderKanban();scheduleSave();}
+function closeModal(e){if(e.target===document.getElementById('modal'))closeModalDirect();}
+function closeModalDirect(){document.getElementById('modal').style.display='none';}
+
+async function generateFromModal(id, type){
+  const d=dossiers.find(x=>x.id===id);if(!d)return;
+  closeModalDirect();
+  await callAPI({numero:d.numero,type,form:d.form||{},sim:d.sim||{}});
+}
+
+// ── API PDF ───────────────────────────────────────────────────────────────
+async function callAPI(payload){
+  const btn=document.getElementById('btn_gen');
+  if(btn){btn.disabled=true;btn.innerHTML='<span class="spinner"></span>Génération en cours...';}
+  try{
+    const resp=await fetch(`${API_URL}/generate`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(payload)
+    });
+    if(!resp.ok)throw new Error(`Erreur serveur: ${resp.status}`);
+    const blob=await resp.blob();
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    const titre=payload.type==='facture'?'Facture':'Devis';
+    a.href=url;
+    a.download=`${titre}_${payload.numero}_${(payload.form?.nom||'client').replace(/\s+/g,'_')}.pdf`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }catch(e){
+    alert('Erreur lors de la génération PDF. Vérifiez votre connexion.\n'+e.message);
+  }
+  if(btn){btn.disabled=false;btn.innerHTML='📄 Générer le PDF du devis';}
+}
+
+// ── SIMULATEUR ────────────────────────────────────────────────────────────
+function changeMarge(d){margeVal=Math.max(0,margeVal+d);document.getElementById('marge_display').textContent=margeVal.toLocaleString('fr-FR')+' €';calc();}
+function buildBareme(){const tb=document.getElementById('bar_tbody');HORS.forEach((r,i)=>{tb.innerHTML+=`<tr><td>${NOMS[i]}</td><td>≤ ${r[0].toLocaleString('fr-FR')} €</td><td>≤ ${r[1].toLocaleString('fr-FR')} €</td><td>≤ ${r[2].toLocaleString('fr-FR')} €</td><td>au-delà</td></tr>`;});}
+function getCouleur(rfr,nb,zone){const data=zone==='idf'?IDF:HORS;const s=data[Math.min(parseInt(nb)-1,4)];if(rfr<=s[0])return'bleu';if(rfr<=s[1])return'jaune';if(rfr<=s[2])return'violet';return'rose';}
+function toggle(id){const card=document.getElementById('pc_'+id),detail=document.getElementById('pd_'+id);if(actifs.has(id)){actifs.delete(id);card.classList.remove('active');detail.style.display='none';}else{actifs.add(id);card.classList.add('active');detail.style.display='block';if(id==='pacaa'&&splitLines.length===0)addSplit();}calc();}
+function addSplit(){const id=splitId++;splitLines.push(id);const div=document.createElement('div');div.className='split-line';div.id='split_'+id;div.innerHTML=`<select id="sref_${id}" onchange="calc()" style="flex:1">${Object.keys(SPLITS).map(k=>`<option value="${k}">${k}</option>`).join('')}</select><input type="number" id="sqty_${id}" value="1" min="1" style="width:70px" oninput="calc()"><button style="background:none;border:none;color:#E24B4A;cursor:pointer;font-weight:700;font-size:15px" onclick="removeSplit(${id})">✕</button>`;document.getElementById('splits_container').appendChild(div);calc();}
+function removeSplit(id){splitLines=splitLines.filter(x=>x!==id);document.getElementById('split_'+id)?.remove();calc();}
+
+function calc(){
+  const rfr=parseFloat(document.getElementById('rfr').value)||0,nb=document.getElementById('nbp').value,zone=document.getElementById('zone').value,sauts=document.getElementById('sauts').value;
+  let couleur=null;
+  if(rfr>0){couleur=getCouleur(rfr,nb,zone);document.getElementById('badge_mpr').innerHTML=LABELS[couleur];}
+  else document.getElementById('badge_mpr').innerHTML='<span class="badge-mpr b-nc">— saisissez le RFR</span>';
+  if(actifs.size===0){document.getElementById('result_box').style.display='none';document.getElementById('info_nc').style.display='block';return;}
+  document.getElementById('result_box').style.display='block';document.getElementById('info_nc').style.display='none';
+  let p1=0,p2=0;
+  [{id:'ite',p1:203,p2:100,inp:'ite_m2'},{id:'combles',p1:102,p2:40,inp:'combles_m2'},{id:'rampants',p1:102,p2:40,inp:'rampants_m2'},{id:'plancher',p1:102,p2:30,inp:'plancher_m2'}].forEach(it=>{if(actifs.has(it.id)){const m2=parseFloat(document.getElementById(it.inp).value)||0;p1+=m2*it.p1;p2+=m2*it.p2;}});
+  [{id:'ballon',p1:3700,p2:2000,inp:'ballon_nb'},{id:'vmc',p1:3500,p2:1000,inp:'vmc_nb'},{id:'pacae',p1:21500,p2:7500,inp:'pacae_nb'}].forEach(it=>{if(actifs.has(it.id)){const n=parseFloat(document.getElementById(it.inp).value)||1;p1+=n*it.p1;p2+=n*it.p2;}});
+  if(actifs.has('pacaa')){const bloc=BLOCS[document.getElementById('bloc_sel').value];p1+=bloc.p1;p2+=bloc.p2;let ts=0;splitLines.forEach(sid=>{const ref=document.getElementById('sref_'+sid)?.value;const qty=parseFloat(document.getElementById('sqty_'+sid)?.value)||1;if(ref&&SPLITS[ref]){p1+=qty*SPLITS[ref].p1;p2+=qty*SPLITS[ref].p2;ts+=qty;}});p1+=ts*3000;p2+=ts*600;}
+  let aide=0;
+  if(couleur){const p1ht=p1/1.055,cfg=TAUX[couleur],base=Math.min(p1ht,sauts==='2'?30000:40000);aide=Math.min(base*cfg.t+cfg.bonus,sauts==='2'?cfg.max2:cfg.max3);}
+  const p3=p2+margeVal,rac=Math.max(0,p3-aide),benef=p3-p2;
+  lastResults={p1,p2,p3,aide,rac,benef,couleur,sauts};
+  document.getElementById('badge_mpr_res').innerHTML=couleur?LABELS[couleur]:'';
+  document.getElementById('r1').textContent=fmt(p1);document.getElementById('r2').textContent=fmt(p2);document.getElementById('r3').textContent=fmt(p3);
+  document.getElementById('r_aide').textContent=couleur?fmt(aide):'— (RFR non saisi)';
+  document.getElementById('r_rac').textContent=couleur?fmt(rac):'— (RFR non saisi)';
+  document.getElementById('r_benef').textContent=fmt(benef);
+}
+
+function goToDevis(){
+  showTab('devis');
+  const r=lastResults,recap=document.getElementById('devis_recap');
+  recap.style.display='block';
+  recap.innerHTML=`<div class="card-title">Récapitulatif du chiffrage</div>
+    <div class="results-grid">
+      <div class="result-item p1"><div class="rl">Prix n°1 — Devis ANAH</div><div class="rv">${fmt(r.p1)}</div></div>
+      <div class="result-item"><div class="rl">Prix n°2 — Coût réel</div><div class="rv">${fmt(r.p2)}</div></div>
+      <div class="result-item"><div class="rl">Prix n°3 — Prix de vente</div><div class="rv">${fmt(r.p3)}</div></div>
+    </div>
+    ${r.couleur?`<div style="margin-top:10px;display:flex;justify-content:space-between;align-items:center;background:#EBF5FA;border-radius:8px;padding:10px 14px"><span style="font-size:13px;font-weight:600;color:var(--bleu)">Reste à charge ${LABELS[r.couleur]}</span><span style="font-size:18px;font-weight:700;color:var(--bleu);font-family:var(--mono)">${fmt(r.rac)}</span></div>`:''}`;
+}
+
+function getSimData(){
+  const d={actifs:[...actifs]};
+  if(actifs.has('ite'))d.ite_qte=parseFloat(document.getElementById('ite_m2').value)||0;
+  if(actifs.has('combles'))d.combles_qte=parseFloat(document.getElementById('combles_m2').value)||0;
+  if(actifs.has('rampants'))d.rampants_qte=parseFloat(document.getElementById('rampants_m2').value)||0;
+  if(actifs.has('plancher'))d.plancher_qte=parseFloat(document.getElementById('plancher_m2').value)||0;
+  if(actifs.has('ballon'))d.ballon_nb=parseInt(document.getElementById('ballon_nb').value)||1;
+  if(actifs.has('vmc'))d.vmc_nb=parseInt(document.getElementById('vmc_nb').value)||1;
+  if(actifs.has('pacae'))d.pacae_nb=parseInt(document.getElementById('pacae_nb').value)||1;
+  if(actifs.has('pacaa')){d.bloc_ref=document.getElementById('bloc_sel').value;d.splits=splitLines.map(sid=>({ref:document.getElementById('sref_'+sid)?.value||'CTXM15R',qty:parseInt(document.getElementById('sqty_'+sid)?.value)||1}));}
+  return d;
+}
+
+async function generatePDF(){
+  const nom=document.getElementById('d_nom').value.trim();
+  if(!nom){alert('Veuillez saisir le nom du client.');return;}
+  const annee=new Date().getFullYear(),numero=`${annee}-${devisCounter}`;
+  const r=lastResults;
+  const formData={
+    civilite:document.getElementById('d_civ').value,nom,
+    adresse:document.getElementById('d_adresse').value,ville:document.getElementById('d_ville').value,
+    tel:document.getElementById('d_tel').value,email:document.getElementById('d_email').value||'Néant',
+    zone:document.getElementById('d_zone').value,chauffage:document.getElementById('d_chauffage').value,
+    logement:document.getElementById('d_logement').value,
+    adrtravaux:document.getElementById('d_adrtravaux').value||'Idem adresse client',
+    shab:document.getElementById('d_shab').value,
+    audit_date:document.getElementById('d_audit_date').value,audit_ref:document.getElementById('d_audit_ref').value,
+    audit_logiciel:document.getElementById('d_audit_logiciel').value,
+    cep_ini:document.getElementById('d_cep_ini').value,cep_proj:document.getElementById('d_cep_proj').value,
+    dpe_avant:document.getElementById('d_dpe_avant').value,dpe_apres:document.getElementById('d_dpe_apres').value,
+    notes:document.getElementById('d_notes').value,
+  };
+  const simData=getSimData();
+  dossiers.push({
+    id:'d'+Date.now(),nom:`${formData.civilite} ${formData.nom}`,
+    adresse:`${formData.adresse}, ${formData.ville}`,
+    tel:formData.tel,email:formData.email,
+    p1:r.p1,p2:r.p2,p3:r.p3,aide:r.aide,rac:r.rac,benef:r.benef,
+    couleur:r.couleur,col:'cree',
+    date:new Date().toLocaleDateString('fr-FR'),
+    numero,form:formData,sim:simData,
+  });
+  devisCounter++;renderKanban();showTab('kanban');scheduleSave();
+  await callAPI({numero,type:'devis',form:formData,sim:simData});
+}
+
+function showTab(id){
+  document.querySelectorAll('.nav-tab').forEach((t,i)=>t.classList.toggle('active',['sim','devis','kanban','bar'][i]===id));
+  document.querySelectorAll('.section').forEach(s=>s.classList.toggle('active',s.id===id));
+}
+
+buildBareme();
+document.getElementById('info_nc').style.display='block';
+loadDossiers();
+</script>
+</body>
+</html>

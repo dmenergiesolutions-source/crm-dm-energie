@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+venv/
+env/
+.env
+*.egg-info/
+dist/
+build/
+
+# Fichiers systèmes
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ZIP (déjà dans le dépôt sous forme de code)
+*.zip
+
+# Logs
+*.log
