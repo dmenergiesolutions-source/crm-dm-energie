@@ -437,7 +437,10 @@
     <div class="fg"><textarea id="d_notes" placeholder="Ex : client souhaite une avance de 30% de la subvention..."></textarea></div>
   </div>
 
-  <button class="btn btn-primary btn-block" id="btn_gen" onclick="generatePDF()">📄 Générer le PDF du devis</button>
+  <div style="display:flex;gap:10px;margin-top:1rem">
+    <button class="btn btn-primary" id="btn_gen" onclick="generatePDF('devis')" style="flex:1;padding:12px;font-size:14px">📄 Générer le devis PDF</button>
+    <button class="btn btn-vert" id="btn_gen_fact" onclick="generatePDF('facture')" style="flex:1;padding:12px;font-size:14px">🧾 Générer la facture PDF</button>
+  </div>
 </div>
 
 <!-- ═══ KANBAN ═══ -->
@@ -470,12 +473,12 @@
   <div class="card" style="margin-top:1rem">
     <div class="card-title">Aides MPR Accompagné 2026</div>
     <table class="bar-table">
-      <thead><tr><th>Profil</th><th>2 sauts — max</th><th>3 sauts+ — max</th></tr></thead>
+      <thead><tr><th>Profil</th><th>Taux</th><th>2 sauts — max</th><th>3 sauts+ — max</th></tr></thead>
       <tbody>
-        <tr><td><span class="badge-mpr b-bleu">Bleu</span></td><td>80% + 2 000€ = <strong>26 000€</strong></td><td>80% + 2 000€ = <strong>34 000€</strong></td></tr>
-        <tr><td><span class="badge-mpr b-jaune">Jaune</span></td><td>60% + 1 600€ = <strong>19 600€</strong></td><td>60% + 1 600€ = <strong>25 600€</strong></td></tr>
-        <tr><td><span class="badge-mpr b-violet">Violet</span></td><td>45% + 800€ = <strong>14 300€</strong></td><td>45% + 800€ = <strong>18 800€</strong></td></tr>
-        <tr><td><span class="badge-mpr b-rose">Rose</span></td><td>10% + 400€ = <strong>3 400€</strong></td><td>10% + 400€ = <strong>4 400€</strong></td></tr>
+        <tr><td><span class="badge-mpr b-bleu">Bleu</span></td><td>80%</td><td><strong>24 000 €</strong></td><td><strong>32 000 €</strong></td></tr>
+        <tr><td><span class="badge-mpr b-jaune">Jaune</span></td><td>60%</td><td><strong>18 000 €</strong></td><td><strong>24 000 €</strong></td></tr>
+        <tr><td><span class="badge-mpr b-violet">Violet</span></td><td>45%</td><td><strong>13 500 €</strong></td><td><strong>18 000 €</strong></td></tr>
+        <tr><td><span class="badge-mpr b-rose">Rose</span></td><td>10%</td><td><strong>3 000 €</strong></td><td><strong>4 000 €</strong></td></tr>
       </tbody>
     </table>
   </div>
@@ -494,14 +497,14 @@
 <script>
 // ── CONFIG ────────────────────────────────────────────────────────────────
 // ⚠️ Remplacer par l'URL de votre backend déployé sur Railway/Render
-const API_URL = 'https://votre-backend.railway.app';
+const API_URL = 'http://localhost:5050';
 
 const HORS=[[17363,22259,31185],[25393,32553,45842],[30540,39148,55196],[35676,45735,64550],[40835,52348,73907]];
 const IDF=[[24031,29253,40851],[35270,42933,60051],[42357,51564,71846],[49455,60208,84562],[56580,68877,96817]];
 const NOMS=['1 pers.','2 pers.','3 pers.','4 pers.','5+ pers.'];
 const BLOCS={'3MXM52A9':{p1:8500,p2:1810.80},'3MXM68A9':{p1:9500,p2:2160},'5MXM90N9':{p1:13000,p2:3017.23}};
 const SPLITS={'CTXM15R':{p1:980,p2:317.95},'FTXM20N':{p1:2280,p2:328.44}};
-const TAUX={bleu:{t:0.80,bonus:2000,max2:26000,max3:34000},jaune:{t:0.60,bonus:1600,max2:19600,max3:25600},violet:{t:0.45,bonus:800,max2:14300,max3:18800},rose:{t:0.10,bonus:400,max2:3400,max3:4400}};
+const TAUX={bleu:{t:0.80,bonus:0,max2:24000,max3:32000},jaune:{t:0.60,bonus:0,max2:18000,max3:24000},violet:{t:0.45,bonus:0,max2:13500,max3:18000},rose:{t:0.10,bonus:0,max2:3000,max3:4000}};
 const LABELS={bleu:'<span class="badge-mpr b-bleu">Bleu — Très modeste</span>',jaune:'<span class="badge-mpr b-jaune">Jaune — Modeste</span>',violet:'<span class="badge-mpr b-violet">Violet — Intermédiaire</span>',rose:'<span class="badge-mpr b-rose">Rose — Supérieur</span>'};
 const COLS=[{id:'cree',label:'Dossier créé',cls:'cree'},{id:'devis_env',label:'Devis envoyé',cls:'devis'},{id:'anah',label:'Envoyé ANAH',cls:'anah'},{id:'acompte',label:'Demande acompte',cls:'acompte'},{id:'chantier',label:'Chantier',cls:'chantier'},{id:'facture',label:'Facture',cls:'facture'}];
 const PRESTA_LABELS={ite:'ITE',combles:'Combles',rampants:'Rampants',plancher:'Plancher',ballon:'Ballon',vmc:'VMC',pacae:'PAC air/eau',pacaa:'PAC air/air'};
@@ -605,7 +608,7 @@ function openModal(id){
     </div>
     <div class="modal-btns">
       <button class="modal-btn devis" onclick="generateFromModal('${d.id}','devis')">📄 Générer le devis</button>
-      <button class="modal-btn facture" ${!isFact?'disabled title="Disponible en colonne Facture"':''} onclick="${isFact?`generateFromModal('${d.id}','facture')`:''}">🧾 Générer la facture</button>
+      <button class="modal-btn facture" onclick="generateFromModal('${d.id}','facture')">🧾 Générer la facture</button>
     </div>
     <button class="btn btn-danger" style="width:100%;margin-top:8px" onclick="supprimerDossier('${d.id}')">🗑 Supprimer ce dossier</button>
   `;
@@ -626,7 +629,9 @@ async function generateFromModal(id, type){
 // ── API PDF ───────────────────────────────────────────────────────────────
 async function callAPI(payload){
   const btn=document.getElementById('btn_gen');
-  if(btn){btn.disabled=true;btn.innerHTML='<span class="spinner"></span>Génération en cours...';}
+  const btnF=document.getElementById('btn_gen_fact');
+  if(btn){btn.disabled=true;btn.innerHTML='<span class="spinner"></span>Génération...';}
+  if(btnF){btnF.disabled=true;btnF.innerHTML='<span class="spinner"></span>Génération...';}
   try{
     const resp=await fetch(`${API_URL}/generate`,{
       method:'POST',
@@ -645,7 +650,8 @@ async function callAPI(payload){
   }catch(e){
     alert('Erreur lors de la génération PDF. Vérifiez votre connexion.\n'+e.message);
   }
-  if(btn){btn.disabled=false;btn.innerHTML='📄 Générer le PDF du devis';}
+  if(btn){btn.disabled=false;btn.innerHTML='📄 Générer le devis PDF';}
+  if(btnF){btnF.disabled=false;btnF.innerHTML='🧾 Générer la facture PDF';}
 }
 
 // ── SIMULATEUR ────────────────────────────────────────────────────────────
@@ -704,7 +710,7 @@ function getSimData(){
   return d;
 }
 
-async function generatePDF(){
+async function generatePDF(type='devis'){
   const nom=document.getElementById('d_nom').value.trim();
   if(!nom){alert('Veuillez saisir le nom du client.');return;}
   const annee=new Date().getFullYear(),numero=`${annee}-${devisCounter}`;
@@ -734,7 +740,7 @@ async function generatePDF(){
     numero,form:formData,sim:simData,
   });
   devisCounter++;renderKanban();showTab('kanban');scheduleSave();
-  await callAPI({numero,type:'devis',form:formData,sim:simData});
+  await callAPI({numero,type,form:formData,sim:simData});
 }
 
 function showTab(id){

@@ -1,9 +1,10 @@
-from flask import Flask, request, send_file, jsonify
+from flask import Flask, request, send_file, jsonify, send_from_directory
 from flask_cors import CORS
 import json, io, datetime, os, sys
 
-app = Flask(__name__)
-CORS(app, origins=["https://dmenergiesolutions.fr", "https://app.dmenergiesolutions.fr", "http://localhost:3000", "http://localhost:5173"])
+FRONTEND = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'frontend')
+app = Flask(__name__, static_folder=FRONTEND)
+CORS(app, origins=["https://dmenergiesolutions.fr", "https://app.dmenergiesolutions.fr", "http://localhost:3000", "http://localhost:5173", "null"], supports_credentials=False)
 
 # Chemin des assets (logos)
 BASE = os.path.dirname(os.path.abspath(__file__))
@@ -16,6 +17,10 @@ import pdf_engine
 pdf_engine.BASE = BASE
 
 from pdf_engine import generate_pdf, build_prestations
+
+@app.route('/')
+def index():
+    return send_from_directory(FRONTEND, 'index.html')
 
 @app.route('/health', methods=['GET'])
 def health():
