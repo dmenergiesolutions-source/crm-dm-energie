@@ -497,7 +497,7 @@
 <script>
 // ── CONFIG ────────────────────────────────────────────────────────────────
 // ⚠️ Remplacer par l'URL de votre backend déployé sur Railway/Render
-const API_URL = 'http://localhost:5050';
+const API_URL = window.location.hostname === 'localhost' ? 'http://localhost:5050' : '';
 
 const HORS=[[17363,22259,31185],[25393,32553,45842],[30540,39148,55196],[35676,45735,64550],[40835,52348,73907]];
 const IDF=[[24031,29253,40851],[35270,42933,60051],[42357,51564,71846],[49455,60208,84562],[56580,68877,96817]];
