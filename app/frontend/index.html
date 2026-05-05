@@ -6,6 +6,7 @@
   <title>DM Energie Solutions — Gestion des devis</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     :root {
       --bleu: #1B3A6B;
@@ -496,8 +497,10 @@
 
 <script>
 // ── CONFIG ────────────────────────────────────────────────────────────────
-// ⚠️ Remplacer par l'URL de votre backend déployé sur Railway/Render
 const API_URL = window.location.hostname === 'localhost' ? 'http://localhost:5050' : '';
+const SUPABASE_URL = 'https://xxhcrwiufhpfaqqdpiao.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh4aGNyd2l1ZmhwZmFxcWRwaWFvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5MzU4MTcsImV4cCI6MjA5MzUxMTgxN30.z7csbOQF4Mt4OwAIxGCmIOrzvVQubCf2JIJYyW_t7P8';
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const HORS=[[17363,22259,31185],[25393,32553,45842],[30540,39148,55196],[35676,45735,64550],[40835,52348,73907]];
 const IDF=[[24031,29253,40851],[35270,42933,60051],[42357,51564,71846],[49455,60208,84562],[56580,68877,96817]];
@@ -515,30 +518,33 @@ let lastResults={p1:0,p2:0,p3:0,aide:0,rac:0,benef:0,couleur:null,sauts:'2'};
 let devisCounter=1010;
 let dragId=null,dossiers=[],saveTimeout=null;
 
-// ── SAUVEGARDE ────────────────────────────────────────────────────────────
+// ── SAUVEGARDE SUPABASE ───────────────────────────────────────────────────
 function setSaveStatus(s){
   ['save_dot','save_dot2'].forEach(id=>{const el=document.getElementById(id);if(el)el.className='save-dot'+(s==='saving'?' saving':'');});
   const txt=s==='saving'?'Sauvegarde...':`Sauvegardé — ${dossiers.length} dossier${dossiers.length>1?'s':''}`;
   ['save_label','save_label2'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=txt;});
 }
-async function saveDossiers(){
+async function saveDossier(d){
   setSaveStatus('saving');
-  try{localStorage.setItem(STORAGE_KEY,JSON.stringify(dossiers));setSaveStatus('saved');}
-  catch(e){console.error(e);setSaveStatus('saved');}
+  const {error}=await db.from('dossiers').upsert(d);
+  if(error)console.error('Erreur sauvegarde:',error);
+  setSaveStatus('saved');
 }
-function loadDossiers(){
-  try{
-    const raw=localStorage.getItem(STORAGE_KEY);
-    if(raw){
-      dossiers=JSON.parse(raw);
-      const nums=dossiers.map(d=>parseInt((d.numero||'').split('-')[1])).filter(n=>!isNaN(n));
-      if(nums.length>0)devisCounter=Math.max(...nums)+1;
-      setSaveStatus('saved');
-    }else{dossiers=[];setSaveStatus('saved');}
-  }catch(e){dossiers=[];setSaveStatus('saved');}
+async function deleteDossierDB(id){
+  const {error}=await db.from('dossiers').delete().eq('id',id);
+  if(error)console.error('Erreur suppression:',error);
+}
+async function loadDossiers(){
+  setSaveStatus('saving');
+  const {data,error}=await db.from('dossiers').select('*').order('created_at',{ascending:true});
+  if(error){console.error('Erreur chargement:',error);dossiers=[];setSaveStatus('saved');renderKanban();return;}
+  dossiers=data||[];
+  const nums=dossiers.map(d=>parseInt((d.numero||'').split('-')[1])).filter(n=>!isNaN(n));
+  if(nums.length>0)devisCounter=Math.max(...nums)+1;
+  setSaveStatus('saved');
   renderKanban();
 }
-function scheduleSave(){clearTimeout(saveTimeout);saveTimeout=setTimeout(saveDossiers,800);}
+function scheduleSave(){}
 
 // ── KANBAN ────────────────────────────────────────────────────────────────
 function fmt(n){return Math.round(n).toLocaleString('fr-FR')+' €';}
@@ -577,7 +583,7 @@ function dragOver(e,id){e.preventDefault();document.getElementById('drop_'+id)?.
 function dragLeave(id){document.getElementById('drop_'+id)?.classList.remove('drag-over');}
 function drop(e,id){
   e.preventDefault();dragLeave(id);
-  if(dragId){const d=dossiers.find(x=>x.id===dragId);if(d){d.col=id;renderKanban();scheduleSave();}}
+  if(dragId){const d=dossiers.find(x=>x.id===dragId);if(d){d.col=id;renderKanban();saveDossier(d);}}
 }
 
 function openModal(id){
@@ -615,8 +621,8 @@ function openModal(id){
   document.getElementById('modal').style.display='flex';
 }
 
-function moveCard(id){const d=dossiers.find(x=>x.id===id);const col=document.getElementById('move_col').value;if(d){d.col=col;closeModalDirect();renderKanban();scheduleSave();}}
-function supprimerDossier(id){if(!confirm('Supprimer ce dossier définitivement ?'))return;dossiers=dossiers.filter(x=>x.id!==id);closeModalDirect();renderKanban();scheduleSave();}
+function moveCard(id){const d=dossiers.find(x=>x.id===id);const col=document.getElementById('move_col').value;if(d){d.col=col;closeModalDirect();renderKanban();saveDossier(d);}}
+function supprimerDossier(id){if(!confirm('Supprimer ce dossier définitivement ?'))return;deleteDossierDB(id);dossiers=dossiers.filter(x=>x.id!==id);closeModalDirect();renderKanban();setSaveStatus('saved');}
 function closeModal(e){if(e.target===document.getElementById('modal'))closeModalDirect();}
 function closeModalDirect(){document.getElementById('modal').style.display='none';}
 
@@ -730,7 +736,7 @@ async function generatePDF(type='devis'){
     notes:document.getElementById('d_notes').value,
   };
   const simData=getSimData();
-  dossiers.push({
+  const newDossier={
     id:'d'+Date.now(),nom:`${formData.civilite} ${formData.nom}`,
     adresse:`${formData.adresse}, ${formData.ville}`,
     tel:formData.tel,email:formData.email,
@@ -738,8 +744,10 @@ async function generatePDF(type='devis'){
     couleur:r.couleur,col:'cree',
     date:new Date().toLocaleDateString('fr-FR'),
     numero,form:formData,sim:simData,
-  });
-  devisCounter++;renderKanban();showTab('kanban');scheduleSave();
+  };
+  dossiers.push(newDossier);
+  await saveDossier(newDossier);
+  devisCounter++;renderKanban();showTab('kanban');
   await callAPI({numero,type,form:formData,sim:simData});
 }
 
