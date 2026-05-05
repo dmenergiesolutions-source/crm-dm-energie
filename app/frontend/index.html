@@ -534,8 +534,23 @@ async function deleteDossierDB(id){
   const {error}=await db.from('dossiers').delete().eq('id',id);
   if(error)console.error('Erreur suppression:',error);
 }
+async function migrateLocalStorage(){
+  const raw=localStorage.getItem('dm_dossiers_v1');
+  if(!raw)return;
+  try{
+    const anciens=JSON.parse(raw);
+    if(!anciens||anciens.length===0){localStorage.removeItem('dm_dossiers_v1');return;}
+    console.log(`Migration de ${anciens.length} dossier(s) depuis localStorage...`);
+    for(const d of anciens){
+      await db.from('dossiers').upsert(d,{onConflict:'id',ignoreDuplicates:true});
+    }
+    localStorage.removeItem('dm_dossiers_v1');
+    console.log('Migration terminée.');
+  }catch(e){console.error('Erreur migration:',e);}
+}
 async function loadDossiers(){
   setSaveStatus('saving');
+  await migrateLocalStorage();
   const {data,error}=await db.from('dossiers').select('*').order('created_at',{ascending:true});
   if(error){console.error('Erreur chargement:',error);dossiers=[];setSaveStatus('saved');renderKanban();return;}
   dossiers=data||[];
